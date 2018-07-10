@@ -7,6 +7,7 @@
         mc:Ignorable="d"
         Title="Story Creator" Height="450" Width="800">
     <Grid>
-        
+        <Menu Height="20" VerticalAlignment="Top"/>
+
     </Grid>
 </Window>

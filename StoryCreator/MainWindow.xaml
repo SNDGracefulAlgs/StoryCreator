@@ -7,7 +7,15 @@
         mc:Ignorable="d"
         Title="Story Creator" Height="450" Width="800">
     <Grid>
-        <Menu Height="20" VerticalAlignment="Top"/>
+        <Menu Height="20" VerticalAlignment="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="New"/>
+                <MenuItem Header="Open"/>
+                <MenuItem Header="Save"/>
+                <MenuItem Header="Save as .."/>
+                <MenuItem Header="Quit"/>
+            </MenuItem>
+        </Menu>
 
     </Grid>
 </Window>

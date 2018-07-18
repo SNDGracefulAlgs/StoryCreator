@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StoryCreator"
-        mc:Ignorable="d" Icon="Resources/AppIcon.png"
+        mc:Ignorable="d" Icon="Resources/AppIcon.png" ResizeMode="CanMinimize" Height="533" Width="775"
         >
     <Grid>
         <Grid.RowDefinitions>
@@ -20,13 +20,13 @@
                 <MenuItem Header="Quit"/>
             </MenuItem>
         </Menu>
-        <TextBox x:Name="sectionContentTextBox" HorizontalAlignment="Left" Height="127" Margin="197,79,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="297" AcceptsReturn="True"/>
-        <Button x:Name="goToParentSecButton" Margin="32,79,626,111" Width="102" Height="46">
+        <TextBox x:Name="sectionContentTextBox" HorizontalAlignment="Left" Height="127" Margin="197,84,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="297" AcceptsReturn="True"/>
+        <Button x:Name="goToParentSecButton" Margin="36,79,631,111" Width="102" Height="46">
             <TextBlock Text="Go to the parent section" TextWrapping="Wrap" TextAlignment="Center"/>
         </Button>
         <TextBox x:Name="markerTextBox" HorizontalAlignment="Left" Height="23" Margin="197,51,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="297"/>
         <TextBlock x:Name="idTextBlock" HorizontalAlignment="Left" Margin="197,211,0,0" TextWrapping="Wrap" Text="Section id:" VerticalAlignment="Top" Width="297"/>
-        <Button x:Name="addHeirSecButton" Margin="32,160,626,30" Width="102" Height="46" Click="addHeirSecButton_Click">
+        <Button x:Name="addHeirSecButton" Margin="36,160,631,30" Height="46" Click="addHeirSecButton_Click">
             <TextBlock Text="Add heir section" TextWrapping="Wrap" TextAlignment="Center"/>
         </Button>
         <StackPanel x:Name="heirsStackPanel" HorizontalAlignment="Left" Height="248" Margin="10,10,0,0" Grid.Row="1" VerticalAlignment="Top" Width="740"/>

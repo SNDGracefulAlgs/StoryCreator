@@ -24,5 +24,13 @@ namespace StoryCreator
         {
             InitializeComponent();
         }
+
+        private void addHeirSecButton_Click(object sender, RoutedEventArgs e)
+        {
+            Button newButton = new Button();
+            newButton.Height = 250;
+            newButton.Width = 250;
+            heirsStackPanel.Children.Add(newButton);
+        }
     }
 }

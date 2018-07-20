@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StoryCreator"
-        mc:Ignorable="d" Icon="Resources/AppIcon.png" ResizeMode="CanMinimize" Height="533" Width="775"
+        mc:Ignorable="d" Icon="Resources/AppIcon.png" ResizeMode="CanMinimize" Height="550" Width="770"
         >
     <Grid>
         <Grid.RowDefinitions>
@@ -21,15 +21,16 @@
             </MenuItem>
         </Menu>
         <TextBox x:Name="sectionContentTextBox" HorizontalAlignment="Left" Height="127" Margin="197,84,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="297" AcceptsReturn="True"/>
-        <Button x:Name="goToParentSecButton" Margin="36,79,631,111" Width="102" Height="46">
+        <Button x:Name="goToParentSecButton" Margin="36,84,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="102" Height="46">
             <TextBlock Text="Go to the parent section" TextWrapping="Wrap" TextAlignment="Center"/>
         </Button>
         <TextBox x:Name="markerTextBox" HorizontalAlignment="Left" Height="23" Margin="197,51,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="297"/>
         <TextBlock x:Name="idTextBlock" HorizontalAlignment="Left" Margin="197,211,0,0" TextWrapping="Wrap" Text="Section id:" VerticalAlignment="Top" Width="297"/>
-        <Button x:Name="addHeirSecButton" Margin="36,160,631,30" Height="46" Click="addHeirSecButton_Click">
+        <Button x:Name="addHeirSecButton" Margin="36,164,0,0" Height="46" HorizontalAlignment="Left" VerticalAlignment="Top" Click="addHeirSecButton_Click" Width="102">
             <TextBlock Text="Add heir section" TextWrapping="Wrap" TextAlignment="Center"/>
         </Button>
         <StackPanel x:Name="heirsStackPanel" HorizontalAlignment="Left" Height="248" Margin="10,10,0,0" Grid.Row="1" VerticalAlignment="Top" Width="740"/>
+        <Button x:Name="button" Content="Button" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="587,132,0,0"  Width="75"/>
 
     </Grid>
 </Window>

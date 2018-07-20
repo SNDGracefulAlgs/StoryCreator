@@ -23,6 +23,7 @@ namespace StoryCreator
         public MainWindow()
         {
             InitializeComponent();
+            CurSolution.FillTestTree();
         }
 
         private void addHeirSecButton_Click(object sender, RoutedEventArgs e)

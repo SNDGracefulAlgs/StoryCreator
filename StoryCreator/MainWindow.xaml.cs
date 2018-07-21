@@ -24,6 +24,7 @@ namespace StoryCreator
         {
             InitializeComponent();
             CurSolution.FillTestTree();
+            CurSolution.CalcTreeLayout();
         }
 
         private void addHeirSecButton_Click(object sender, RoutedEventArgs e)

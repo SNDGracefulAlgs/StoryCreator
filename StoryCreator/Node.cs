@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ namespace StoryCreator
     public class Node
     {
         public Int16 level;
+        public PointF coord;
         public string content;
         public HashSet<Node> parents;
         public List<Heir> heirs;

@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StoryCreator"
-        mc:Ignorable="d" Icon="Resources/AppIcon.png" ResizeMode="CanMinimize" Height="550" Width="770"
+        mc:Ignorable="d" Icon="Resources/AppIcon.png" ResizeMode="CanMinimize" Height="651" Width="829"
         >
     <Grid>
         <Grid.RowDefinitions>
@@ -29,8 +29,8 @@
         <Button x:Name="addHeirSecButton" Margin="36,164,0,0" Height="46" HorizontalAlignment="Left" VerticalAlignment="Top" Click="addHeirSecButton_Click" Width="102">
             <TextBlock Text="Add heir section" TextWrapping="Wrap" TextAlignment="Center"/>
         </Button>
-        <StackPanel x:Name="heirsStackPanel" HorizontalAlignment="Left" Height="248" Margin="10,10,0,0" Grid.Row="1" VerticalAlignment="Top" Width="740"/>
         <Button x:Name="button" Content="Button" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="587,132,0,0"  Width="75"/>
+        <Image x:Name="treeImage" Margin="10" Grid.Row="1"/>
 
     </Grid>
 </Window>

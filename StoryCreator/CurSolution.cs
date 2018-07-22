@@ -9,21 +9,23 @@ namespace StoryCreator
     public static class CurSolution
     {
         public static Node root;
-        static UInt16 height;
-        static UInt16 width;
+        public static UInt16 height;
+        public static UInt16 width;
         static UInt16 maxCountLevel;
         public static Dictionary<UInt16,HashSet<Node>> levelDict;
 
         public static void CalcTreeLayout()
         {
+            ParentsSet(root, null);
+            levelDict = null;
+            levelDict = new Dictionary<ushort, HashSet<Node>>();
             FillLevelDict(root);
             CalcCoords();
         }
         
+        //распределение узлов по уровням
         static void FillLevelDict(Node curNode)
         {
-            levelDict = null;
-            levelDict = new Dictionary<ushort, HashSet<Node>>();
             if (!levelDict.ContainsKey((UInt16)curNode.level)) levelDict.Add((UInt16)curNode.level,new HashSet<Node>());
             levelDict[(UInt16)curNode.level].Add(curNode);
             if(curNode.heirs!=null)
@@ -34,11 +36,76 @@ namespace StoryCreator
             height = (UInt16)levelDict.Count;
             maxCountLevel = levelDict.First(el => el.Value.Count==levelDict.Values.Select(p => p.Count).Max()).Key;
             width = (UInt16)levelDict[maxCountLevel].Count;
+            FillTreeCoords();
         }
 
-        static void FillTreeCoords(HashSet<Node> level)
+        static void FillTreeCoords()
         {
+            List<Node> tmpNodesList = levelDict[maxCountLevel].ToList();
+            for (int i = 0; i < tmpNodesList.Count; i++)
+            {
+                tmpNodesList[i].coord.X = i;
+                tmpNodesList[i].coord.Y = tmpNodesList[i].level;
+            }
+            UpperStep(tmpNodesList);
+            LowerStep(tmpNodesList);
+        }
 
+        static void UpperStep(List<Node> level)
+        {
+            HashSet<Node> allLevelParents = ObtainLevelParents(level);
+            if (allLevelParents == null) return;
+
+            if (allLevelParents.Count < levelDict[(UInt16)level[0].level].Count)
+            {
+                List<Node> nonParentNodes = levelDict[(UInt16)level[0].level].Where(el => !allLevelParents.Contains(el)).ToList();
+            }
+
+            foreach (Node parent in allLevelParents)
+            {
+                parent.coord.X = parent.heirs.Select(h => h.heirNode.coord.X).Sum() / (float)parent.heirs.Count;
+                parent.coord.Y = parent.level;
+            }
+
+            UpperStep(allLevelParents.ToList());
+        }
+
+        static void LowerStep(List<Node> level)
+        {
+            HashSet<Node> allLevelHeirs = ObtainLevelheirs(level);
+            if (allLevelHeirs == null) return;
+           
+            foreach (Node heir in allLevelHeirs)
+            {
+                heir.coord.X = heir.parents.Select(p => p.coord.X).Sum() / (float)heir.parents.Count;
+                heir.coord.Y = heir.level;
+            }
+
+            LowerStep(allLevelHeirs.ToList());
+        }
+
+        static HashSet<Node> ObtainLevelParents(List<Node> level)
+        {
+            IEnumerable<HashSet<Node>> tmpCollect = level.Select(node => node.parents);
+            tmpCollect = tmpCollect.Where(el => el != null);
+            if (tmpCollect.Count() == 0) return null;
+            HashSet<Node> allLevelParents = new HashSet<Node>();
+            foreach (HashSet<Node> parents in tmpCollect)
+                foreach (Node parent in parents)
+                    allLevelParents.Add(parent);
+            return allLevelParents;
+        }
+
+        static HashSet<Node> ObtainLevelheirs(List<Node> level)
+        {
+            IEnumerable<List<Heir>> tmpCollect = level.Select(node => node.heirs);
+            tmpCollect = tmpCollect.Where(el => el != null);
+            if (tmpCollect.Count() == 0) return null;
+            HashSet<Node> allLevelHeirs = new HashSet<Node>();
+            foreach (List<Heir> heirs in tmpCollect)
+                foreach (Heir heir in heirs)
+                    allLevelHeirs.Add(heir.heirNode);
+            return allLevelHeirs;
         }
 
         public static void FillTestTree()
@@ -93,11 +160,19 @@ namespace StoryCreator
             tmpNode.AddHeir("branch1", "heir1");
             tmpNode.heirs[0].heirNode.AddParent(root.heirs[2].heirNode.heirs[0].heirNode.heirs[0].heirNode.heirs[1].heirNode.heirs[2].heirNode.heirs[0].heirNode);
             tmpNode.heirs[0].heirNode.AddParent(root.heirs[2].heirNode.heirs[0].heirNode.heirs[0].heirNode.heirs[1].heirNode.heirs[2].heirNode.heirs[1].heirNode);
-
-
-
+           
         }
 
+        static void ParentsSet(Node curNode,Node parentNode)
+        {
+            if (parentNode != null)
+            {
+                if (curNode.parents == null) curNode.parents = new HashSet<Node>();
+                curNode.parents.Add(parentNode);
+            }
 
+            if (curNode.heirs != null)
+                foreach (Heir heir in curNode.heirs) ParentsSet(heir.heirNode,curNode);
+        }
     }
 }

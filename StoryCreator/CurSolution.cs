@@ -32,6 +32,7 @@ namespace StoryCreator
             foreach (Heir heir in curNode.heirs) FillLevelDict(heir.heirNode);
         }
 
+
         static void CalcCoords() {
             height = (UInt16)levelDict.Count;
             maxCountLevel = levelDict.First(el => el.Value.Count==levelDict.Values.Select(p => p.Count).Max()).Key;
@@ -108,6 +109,7 @@ namespace StoryCreator
             return allLevelHeirs;
         }
 
+        //тестовое заполнение дерева (схема дерева нарисована в блокноте)
         public static void FillTestTree()
         {
             Node tmpNode;
@@ -160,7 +162,6 @@ namespace StoryCreator
             tmpNode.AddHeir("branch1", "heir1");
             tmpNode.heirs[0].heirNode.AddParent(root.heirs[2].heirNode.heirs[0].heirNode.heirs[0].heirNode.heirs[1].heirNode.heirs[2].heirNode.heirs[0].heirNode);
             tmpNode.heirs[0].heirNode.AddParent(root.heirs[2].heirNode.heirs[0].heirNode.heirs[0].heirNode.heirs[1].heirNode.heirs[2].heirNode.heirs[1].heirNode);
-           
         }
 
         static void ParentsSet(Node curNode,Node parentNode)

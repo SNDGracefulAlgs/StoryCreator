@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Windows.Controls;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,14 +12,27 @@ namespace StoryCreator
     {
         public Int16 level;
         public PointF coord;
+        public Canvas canvas;
         public string content;
         public HashSet<Node> parents;
         public List<Heir> heirs;
 
-        public void AddHeir(string branchText, string content)
+        public Node()
+        {
+            parents = new HashSet<Node>();
+            heirs = new List<Heir>();
+        }
+
+        public Node AddHeir(string branchText, string content)
         {
             if (heirs == null) heirs = new List<Heir>();
-            heirs.Add(new Heir { branchText = branchText, heirNode = new Node { content = content, heirs = null,level=(Int16)(level+1) } });
+            Heir newHeir = new Heir
+            {
+                branchText = branchText,
+                heirNode = new Node { content = content, heirs = null, level = (Int16)(level + 1) }
+            };
+            heirs.Add(newHeir);
+            return newHeir.heirNode;
         }
         public void AddHeir(string branchText, Node contentNode)
         {

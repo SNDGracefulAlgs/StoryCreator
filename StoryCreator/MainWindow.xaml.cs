@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.IO;
 using System.Drawing;
+using System.Windows.Threading;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -23,20 +24,44 @@ namespace StoryCreator
     public partial class MainWindow : Window
     {
         BitmapImage curTreeBitmapImage;
+        public enum WorkspaceConditions {onAwakeActions,nodeCanvPositioning,nothingHappens };
+        public WorkspaceConditions workspaceCondition;
+        DispatcherTimer actionPumpingTimer;
+        
         public MainWindow()
         {
             InitializeComponent();
-            CurSolution.FillTestTree();
-            CurSolution.CalcTreeLayout();
+            workspaceCondition = WorkspaceConditions.onAwakeActions;
+            actionPumpingTimer = new DispatcherTimer();
+            actionPumpingTimer.Tick += new EventHandler(TimerTickAction);
+            actionPumpingTimer.Interval = new TimeSpan(0, 0, 0, 0, 15);
+            actionPumpingTimer.Start();
+            
+        }
 
-            Bitmap treeBitMap = new Bitmap(CurSolution.width * 180, CurSolution.height * 100);
-            Graphics g = Graphics.FromImage(treeBitMap);
-            g.FillRegion(new SolidBrush(System.Drawing.Color.AntiqueWhite), new Region(new System.Drawing.Rectangle(0, 0, CurSolution.width * 180, CurSolution.height * 100)));
-            //tree drawing
-            DrawTree(g,CurSolution.levelDict);
-            g.Dispose();
-            curTreeBitmapImage = BitmapToImageSource(treeBitMap);
-            treeImage.Source = curTreeBitmapImage;
+        void TimerTickAction(object sender, EventArgs e)
+        {
+            switch (workspaceCondition)
+            {
+                case WorkspaceConditions.nodeCanvPositioning:
+                    {
+                        VisualWorkspaceHandler.ToPositionTheNodeCanvas();
+                        break;
+                    }
+                case WorkspaceConditions.onAwakeActions:
+                    {
+                        VisualWorkspaceHandler.Init(this, workspaceCanvas, null);
+                        VisualWorkspaceHandler.DrawFrame();
+                        workspaceCondition = WorkspaceConditions.nothingHappens;
+                        break;
+                    }
+                case WorkspaceConditions.nothingHappens:
+                    {
+                        VisualWorkspaceHandler.CheckNodes();
+                        break;
+                    }
+                default: break;
+            }
         }
 
         private void addHeirSecButton_Click(object sender, RoutedEventArgs e)
@@ -45,15 +70,7 @@ namespace StoryCreator
             newButton.Height = 250;
             newButton.Width = 250;
         }
-
-        void DrawTree(Graphics g, Dictionary<UInt16, HashSet<Node>> levelDict)
-        {
-            System.Drawing.Pen myPen = new System.Drawing.Pen(System.Drawing.Color.Black,5);
-            foreach (HashSet<Node> nodes in levelDict.Values)
-                foreach(Node node in nodes)
-                g.DrawRectangle(myPen, new System.Drawing.Rectangle((int)(node.coord.X*40),(int)(node.coord.Y*40), 20, 20));
-            myPen.Dispose();
-        }
+        
 
         BitmapImage BitmapToImageSource(Bitmap bitmap)
         {
@@ -70,5 +87,6 @@ namespace StoryCreator
                 return bitmapimage;
             }
         }
+        
     }
 }

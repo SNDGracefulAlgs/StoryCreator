@@ -24,7 +24,7 @@ namespace StoryCreator
     public partial class MainWindow : Window
     {
         BitmapImage curTreeBitmapImage;
-        public enum WorkspaceConditions {onAwakeActions,nodeCanvPositioning,nothingHappens };
+        public enum WorkspaceConditions {onAwakeActions,nodeCanvPositioning,fromParentToHeirRelationPositioniong, fromHeirToParentRelationPositioniong, nothingHappens };
         public WorkspaceConditions workspaceCondition;
         DispatcherTimer actionPumpingTimer;
         

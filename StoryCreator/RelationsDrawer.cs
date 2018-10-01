@@ -13,28 +13,19 @@ namespace StoryCreator
     {
         public static Polyline ConstructPolyline(PointF P0, PointF P1, PointF P2, PointF P3)
         {
+            float p12Dist = (float)Math.Sqrt(Math.Pow(P2.X-P1.X,2)+Math.Pow(P2.Y-P1.Y,2));
+            int divisionsNum = Math.Max((int)(p12Dist * .2f),8);
+            float tStep = 1f / (float)divisionsNum;
             P0.Y *= .5f;
             P3.Y *= 1.5f;
-            PointF P12 = new PointF(P1.X + .5f * (P2.X - P1.X), P1.Y + .5f * (P2.Y - P1.Y));
             Polyline newPolyLine = new System.Windows.Shapes.Polyline();
             PointCollection polylinePointsCollect = new PointCollection();
-            for (float i = 0; i <= 1; i += .01f)
+            for (float t = 0; t <= 1; t += tStep)
             {
-                PointF newPF = CatmullRomEq(P0, P1, P2, P3, i);
+                if (t + tStep > 1) t = 1;
+                PointF newPF = CatmullRomEq(P0, P1, P2, P3, t);
                 polylinePointsCollect.Add(new System.Windows.Point((int)newPF.X, (int)newPF.Y));
             }
-            /*
-            for (float i = 0; i <= 1; i += .01f)
-            {
-                PointF newPF = CatmullRomEq(P0, P1, P12, P2, i);
-                polylinePointsCollect.Add(new System.Windows.Point((int)newPF.X,(int)newPF.Y));
-            }
-            for (float i = 0; i <= 1; i += .01f)
-            {
-                PointF newPF = CatmullRomEq(P1, P12, P2, P3, i);
-                polylinePointsCollect.Add(new System.Windows.Point((int)newPF.X, (int)newPF.Y));
-            }
-            */
             newPolyLine.Points = polylinePointsCollect;
             newPolyLine.Stroke = System.Windows.Media.Brushes.Black;
             newPolyLine.StrokeThickness = 2;

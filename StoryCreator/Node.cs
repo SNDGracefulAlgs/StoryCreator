@@ -37,6 +37,7 @@ namespace StoryCreator
         public void AddHeir(string branchText, Node contentNode)
         {
             if (heirs == null) heirs = new List<Heir>();
+            if(heirs.Count(el=>el.heirNode.Equals(contentNode))==0)
             heirs.Add(new Heir { branchText = branchText, heirNode = contentNode});
         }
         public void AddParent(Node parent)

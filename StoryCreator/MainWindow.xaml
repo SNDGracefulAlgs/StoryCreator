@@ -16,7 +16,7 @@
                 <ColumnDefinition Width="662*"/>
                 <ColumnDefinition Width="141*"/>
             </Grid.ColumnDefinitions>
-            <Canvas x:Name="workspaceCanvas" ClipToBounds="True" Margin="10" Background="GhostWhite"/>
+            <Canvas x:Name="workspaceCanvas" ClipToBounds="True" Margin="10" Background="GhostWhite"></Canvas>
         </Grid>
 
     </Grid>

@@ -45,13 +45,13 @@ namespace StoryCreator
             }
         }
 
-        public static void Init(MainWindow mWInst, Canvas workspaceCanvas, Node root)
+        public static void Init(MainWindow mWInst, Canvas backgroundCanvas, Node root)
         {
             curNodesOnLayout = new Dictionary<Canvas, NodeCanvasData>();
             VisualWorkspaceHandler.mWInst = mWInst;
-            VisualWorkspaceHandler.workspaceCanvas = workspaceCanvas;
-            workspaceCanvas.MouseMove += workspaceCanvas_MouseMove;
-            workspaceCanvas.MouseRightButtonUp += workspaceCanvas_RightMouseUp;
+            VisualWorkspaceHandler.workspaceCanvas = backgroundCanvas;
+            backgroundCanvas.MouseMove += workspaceCanvas_MouseMove;
+            backgroundCanvas.MouseRightButtonUp += workspaceCanvas_RightMouseUp;
         } 
 
         public static void RepaintLayout()
@@ -61,14 +61,339 @@ namespace StoryCreator
 
         public static void DrawFrame()
         {
-            CreateNewNode(new PointF((float)(workspaceCanvas.ActualWidth * .5f - 100), 50), "branch text",true);
+            CreateIsolatedNode(new PointF((float)(workspaceCanvas.ActualWidth * .5f - 100), 50), true);
+        }
+
+        #region Events handeling
+        private static void relation_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Polyline relationPolyLine = (Polyline)sender;
+            relationPolyLine.Stroke = System.Windows.Media.Brushes.Red;
+        }
+        private static void relation_MouseLeave(object sender, MouseEventArgs e)
+        {
+            Polyline relationPolyLine = (Polyline)sender;
+            relationPolyLine.Stroke = System.Windows.Media.Brushes.Black;
+        }
+        private static void canvasRedRect_MouseEnter(object sender, MouseEventArgs e)
+        {
+            System.Windows.Shapes.Rectangle redRect = (System.Windows.Shapes.Rectangle)sender;
+            Border redRectBorder = (Border)redRect.Parent;
+            redRectBorder.BorderBrush = System.Windows.Media.Brushes.Blue;
+            redRectBorder.BorderThickness = new Thickness(2);
+        }
+        private static void canvasRedRect_MouseLeave(object sender, MouseEventArgs e)
+        {
+            System.Windows.Shapes.Rectangle redRect = (System.Windows.Shapes.Rectangle)sender;
+            Border redRectBorder = (Border)redRect.Parent;
+            redRectBorder.BorderBrush = System.Windows.Media.Brushes.Black;
+            redRectBorder.BorderThickness = new Thickness(1);
+        }
+        private static void canvasRedRect_LeftMouseDown(object sender, MouseEventArgs e)
+        {
+            System.Windows.Shapes.Rectangle redRect = (System.Windows.Shapes.Rectangle)sender;
+            Canvas createdNodecanvas = CreateNodeHeir(GetCanvasNodeData(GetRectCanvas(redRect)).node, "branch text");
+            Border nodeCanvasBorder = (Border)createdNodecanvas.Parent;
+            Canvas.SetLeft(nodeCanvasBorder, e.GetPosition(workspaceCanvas).X-createdNodecanvas.Width*.5f);
+            Canvas.SetTop(nodeCanvasBorder, e.GetPosition(workspaceCanvas).Y- createdNodecanvas.Height*.75f);
+
+            curManipulatingCanvas = createdNodecanvas;
+            curManipCanvBorder = (Border)curManipulatingCanvas.Parent;
+            nodeCanvOffsVector = new PointF((float)(e.GetPosition(mWInst.workspaceCanvas).X - Canvas.GetLeft(curManipCanvBorder)), (float)(e.GetPosition(mWInst.workspaceCanvas).Y - Canvas.GetTop(curManipCanvBorder)));
+            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nodeCanvPositioning;
+        }
+        private static void canvasRedRect_RightMouseDown(object sender, MouseEventArgs e)
+        {
+            curManipulatingCanvas = GetRectCanvas((System.Windows.Shapes.Rectangle)sender);
+            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong;
+        }
+        private static void nodeCanvas_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Canvas nodeCanvas = (Canvas)sender;
+            canvasOnHover = nodeCanvas;
+            Border nodeCanvasBorder = (Border)nodeCanvas.Parent;
+            nodeCanvasBorder.BorderBrush = System.Windows.Media.Brushes.Blue;
+            nodeCanvasBorder.BorderThickness = new Thickness(2);
+            switch (mWInst.workspaceCondition)
+            {
+                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
+                    break;
+                default:
+                    break;
+            }
+        }
+        private static void nodeCanvas_MouseLeave(object sender, MouseEventArgs e)
+        {
+            canvasOnHover = null;
+            Canvas nodeCanvas = (Canvas)sender;
+            Border nodeCanvasBorder = (Border)nodeCanvas.Parent;
+            nodeCanvasBorder.BorderBrush = System.Windows.Media.Brushes.Black;
+            nodeCanvasBorder.BorderThickness = new Thickness(1);
+        }
+        private static void nodeCanvas_LeftMouseDown(object sender, MouseEventArgs e)
+        {
+            curManipulatingCanvas = (Canvas)sender;
+            curManipCanvBorder = (Border)curManipulatingCanvas.Parent;
+          //  Canvas.SetZIndex(curManipulatingCanvas, 0);
+            nodeCanvOffsVector = new PointF((float)(e.GetPosition(mWInst.workspaceCanvas).X - Canvas.GetLeft(curManipCanvBorder)), (float)(e.GetPosition(mWInst.workspaceCanvas).Y - Canvas.GetTop(curManipCanvBorder)));
+            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nodeCanvPositioning;
+        }
+        private static void nodeCanvas_LeftMouseUp(object sender, MouseEventArgs e)
+        {
+            curManipCanvBorder.BorderBrush = System.Windows.Media.Brushes.Black;
+            curManipCanvBorder.BorderThickness = new Thickness(1);
+
+            workspaceCanvas.Children.Remove(curManipulatingCanvas);
+            curManipCanvBorder.Child = curManipulatingCanvas;
+            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nothingHappens;
+        }
+        private static void nodeCanvas_RightMouseUp(object sender, MouseEventArgs e)
+        {
+            Canvas nodeCanvas = (Canvas)sender;
+            switch (mWInst.workspaceCondition)
+            {
+                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
+                    NodeCanvasData parentNCDInst = GetCanvasNodeData(curManipulatingCanvas);
+                    if (!parentNCDInst.heirsTextBlocks.ContainsKey(nodeCanvas))
+                    {
+                        TextBlock branchTextBlock = InstantiateBranchTextBlock("branch text");
+                        parentNCDInst.heirsTextBlocks.Add(nodeCanvas, branchTextBlock);
+                        GetCanvasNodeData(nodeCanvas).node.AddParent(parentNCDInst.node);
+                        parentNCDInst.node.AddHeir("branch text", GetCanvasNodeData(nodeCanvas).node);
+                        mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nothingHappens;
+                        GetCanvasNodeData(curManipulatingCanvas).isCanvasChanged = true;
+                        workspaceCanvas.Children.Remove(curDrawingPoyline);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        private static void workspaceCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            mouseLastPos = new PointF((float)(e.GetPosition(workspaceCanvas).X), (float)(e.GetPosition(workspaceCanvas).Y));
+            switch (mWInst.workspaceCondition)
+            {
+                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
+                    workspaceCanvas.Children.Remove(curDrawingPoyline);
+                    Border curManipCanvBorder = (Border)curManipulatingCanvas.Parent;
+                    PointF p0 = new PointF((float)(Canvas.GetLeft(curManipCanvBorder) + .5f * curManipCanvBorder.ActualWidth), (float)(Canvas.GetTop(curManipCanvBorder)));
+                    PointF p1 = new PointF((float)(Canvas.GetLeft(curManipCanvBorder) + .5f * curManipCanvBorder.ActualWidth), (float)(Canvas.GetTop(curManipCanvBorder) + curManipCanvBorder.ActualHeight));
+                    PointF p2 = mouseLastPos;
+                    if (canvasOnHover != null) {
+                        Ellipse pivotParentEllipse = GetCanvasNodeData(canvasOnHover).parentPivot;
+                        p2 = new PointF((float)(Canvas.GetLeft(pivotParentEllipse)+pivotParentEllipse.ActualWidth*.5f),(float)(Canvas.GetTop(pivotParentEllipse)+pivotParentEllipse.ActualHeight*.5f));
+                    }
+                    curDrawingPoyline = RelationsDrawer.ConstructPolyline(p0,p1,p2,new PointF {X=p2.X,Y=p2.Y+50 });
+                    workspaceCanvas.Children.Add(curDrawingPoyline);
+                    break;
+                default:
+                    break;
+            }
+        }
+        private static void workspaceCanvas_RightMouseUp(object sender, MouseEventArgs e)
+        {
+            switch (mWInst.workspaceCondition)
+            {
+                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
+                    workspaceCanvas.Children.Remove(curDrawingPoyline);
+                    mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nothingHappens;
+                    break;
+                default:
+                    break;
+            }
+        }
+        private static void nodeTextBlock_LeftMouseDown(object sender, MouseEventArgs e)
+        {
+            //MessageBox.Show("LMB click was handeled at "+ ((TextBlock)sender).Name);
+        }
+        private static void nodeDelButton_Click(object sender, RoutedEventArgs e)
+        {
+            Canvas nodeCanvasToDel = (Canvas)((Button)sender).Parent;
+            DelNodeFromHeirs(nodeCanvasToDel);
+            DelNodeFromParents(nodeCanvasToDel);
+            Border nodecanvasBorder = (Border)nodeCanvasToDel.Parent;
+            workspaceCanvas.Children.Remove(nodecanvasBorder);
+            RemoveNodeShapes(nodeCanvasToDel);
+            curNodesOnLayout.Remove(nodeCanvasToDel);
+        }
+        private static void nodeAddHeirButton_Click(object sender, RoutedEventArgs e)
+        {
+            Canvas parentNodeCanvas = (Canvas)((Button)sender).Parent;
+            CreateNodeHeir(curNodesOnLayout[parentNodeCanvas].node, "branch text");
+        }
+        #endregion
+
+        #region controls functions
+        //>>>
+        //calls from MainWindow
+        public static void ToPositionTheNodeCanvas()
+        {
+            CheckNodes();
+            float x= mouseLastPos.X - nodeCanvOffsVector.X;
+            float y= mouseLastPos.Y - nodeCanvOffsVector.Y;
+            NodeCanvasData nCDinst = GetCanvasNodeData(curManipulatingCanvas);
+            nCDinst.isCanvasChanged = IsNodeCanvasPosChanged(curManipulatingCanvas, new PointF(x, y));
+            Canvas.SetLeft(curManipCanvBorder, x);
+            Canvas.SetTop(curManipCanvBorder, y);
+
+            foreach (Node parentNode in nCDinst.node.parents)
+                GetCanvasNodeData(parentNode.canvas).isCanvasChanged=true;
+            
+
+        }
+        public static void CheckNodes()
+        {
+            foreach( KeyValuePair<Canvas,NodeCanvasData> pair in curNodesOnLayout)
+            
+                if (pair.Value.isCanvasChanged)
+                {
+                    RepaintNodeShapes(pair.Key);
+                    pair.Value.isCanvasChanged = false;
+                }
+        }
+        //<<<
+        static bool IsNodeCanvasPosChanged(Canvas nodeCanvas,PointF newPoint)
+        {
+            if (Canvas.GetLeft(nodeCanvas) == newPoint.X && Canvas.GetTop(nodeCanvas) == newPoint.Y) return false;
+            return true;
+        }
+        static void RepaintNodeShapes(Canvas nodeCanvas)
+        {
+            Border nodeCanvasBorder = (Border)nodeCanvas.Parent;
+            RemoveNodeShapes(nodeCanvas);
+            NodeCanvasData ncDInst = GetCanvasNodeData(nodeCanvas);
+            Node node = ncDInst.node;
+
+            Border rectBorder = new Border() { CornerRadius = new CornerRadius(2), BorderThickness = new Thickness(1), BorderBrush = System.Windows.Media.Brushes.Black };
+
+            System.Windows.Shapes.Rectangle heirsPivotRect = new System.Windows.Shapes.Rectangle() { Stroke = new SolidColorBrush(Colors.Black), Fill = new SolidColorBrush(Colors.IndianRed), Width = 25, Height = 25 };
+            Canvas.SetLeft(rectBorder, Canvas.GetLeft(nodeCanvasBorder) + .5f * nodeCanvasBorder.ActualWidth - 12.5f);
+            Canvas.SetTop(rectBorder, Canvas.GetTop(nodeCanvasBorder) + nodeCanvasBorder.ActualHeight);
+            heirsPivotRect.MouseEnter += new MouseEventHandler(canvasRedRect_MouseEnter);
+            heirsPivotRect.MouseLeave += new MouseEventHandler(canvasRedRect_MouseLeave);
+            heirsPivotRect.MouseLeftButtonDown += new MouseButtonEventHandler(canvasRedRect_LeftMouseDown);
+            heirsPivotRect.MouseRightButtonDown += new MouseButtonEventHandler(canvasRedRect_RightMouseDown);
+            rectBorder.Child = heirsPivotRect;
+            workspaceCanvas.Children.Add(rectBorder);
+            Canvas.SetZIndex(rectBorder, 10000);
+            ncDInst.heirsPivot = heirsPivotRect;
+
+            Ellipse parentPivotEllipse = new Ellipse() { Stroke = new SolidColorBrush(Colors.Black), Fill = new SolidColorBrush(Colors.CadetBlue), Width = 25, Height = 25 };
+            Canvas.SetLeft(parentPivotEllipse, Canvas.GetLeft(nodeCanvasBorder) + .5f * nodeCanvas.Width - 12.5f);
+            Canvas.SetTop(parentPivotEllipse, Canvas.GetTop(nodeCanvasBorder) - 25);
+            workspaceCanvas.Children.Add(parentPivotEllipse);
+            Canvas.SetZIndex(parentPivotEllipse, 20000);
+            ncDInst.parentPivot = parentPivotEllipse;
+
+            if (node.heirs != null && node.heirs.Count > 0)
+            {
+                List<Canvas> heirsCanvases = new List<Canvas>();
+                foreach (Heir heir in node.heirs)
+                {
+                    heirsCanvases.Add(curNodesOnLayout.Where(el => el.Value.node.Equals(heir.heirNode)).ToArray()[0].Key);
+                }
+                for (int i = 0; i < heirsCanvases.Count; i++)
+                {
+                    Border heirCanvBorder = (Border)heirsCanvases[i].Parent;
+                    Polyline newPLine;
+                    PointF p0, p1, p2, p3;
+                    p1 = new PointF((float)(Canvas.GetLeft(nodeCanvasBorder) + .5f * nodeCanvasBorder.ActualWidth), (float)(Canvas.GetTop(nodeCanvasBorder) + nodeCanvasBorder.ActualHeight + ncDInst.heirsPivot.ActualHeight * .5f));
+                    p2 = new PointF((float)(Canvas.GetLeft(heirCanvBorder) + .5f * (heirCanvBorder).ActualWidth), (float)(Canvas.GetTop(heirCanvBorder) - GetCanvasNodeData(heirsCanvases[i]).parentPivot.ActualHeight * .5f));
+                    if (!nodeCanvasBorder.Equals(heirCanvBorder))
+                    {
+                        p0 = new PointF(p1.X, (float)Canvas.GetTop(nodeCanvasBorder));
+                        p3 = new PointF(p2.X, (float)(Canvas.GetTop(heirCanvBorder) + (heirCanvBorder).ActualHeight));
+                        newPLine = RelationsDrawer.ConstructPolyline(p0, p1, p2, p3);
+                    }else
+                    {
+                        p0 = new PointF(p1.X , p1.Y-100f);
+                        p3 = new PointF(p2.X , p2.Y+100f);
+                        newPLine = RelationsDrawer.ConstructPolyline(p0, p1, p2, p3,true);
+                    }
+                    
+                    int midIndex = (int)(newPLine.Points.Count * .5f);
+
+                    AddArrowsToPolyline(newPLine);
+
+                    newPLine.MouseEnter += new MouseEventHandler(relation_MouseEnter);
+                    newPLine.MouseLeave += new MouseEventHandler(relation_MouseLeave);
+                    System.Windows.Point textBlockPos = newPLine.Points.ToArray()[midIndex];
+
+                    Border tmpBorder = (Border)GetBranchTextBlock(nodeCanvas,heirsCanvases[i]).Parent;
+                    Canvas.SetLeft(tmpBorder, textBlockPos.X- tmpBorder.ActualWidth * .5f);
+                    Canvas.SetTop(tmpBorder, textBlockPos.Y);
+
+                    ncDInst.relations.Add(newPLine);
+                    workspaceCanvas.Children.Add(newPLine);
+                    Canvas.SetZIndex(newPLine, 0);
+                }
+            }
+        }
+        static void RemoveNodeShapes(Canvas nodeCanvas)
+        {
+            NodeCanvasData ncDInst = curNodesOnLayout[nodeCanvas];
+            if (ncDInst.heirsPivot != null)
+            {
+                Border borderToDel = (Border)ncDInst.heirsPivot.Parent;
+                workspaceCanvas.Children.Remove(borderToDel);
+                borderToDel = null;
+            }
+            if (ncDInst.parentPivot != null)
+            {
+                workspaceCanvas.Children.Remove(ncDInst.parentPivot);
+                ncDInst.parentPivot = null;
+            }
+            List<Polyline> relations = ncDInst.relations;
+            if (relations != null && relations.Count > 0)
+                for (int i = 0; i < relations.Count; i++)
+                {
+                    if(relations[i]!=null && relations[i].Points!=null)
+                    while(relations[i].Points.Count>0)
+                    {
+                        relations[i].Points.Remove(relations[i].Points.Take(1).ToArray()[0]);
+                    }
+                    workspaceCanvas.Children.Remove(relations[i]);
+                    relations[i] = null;
+                }
+
+        }
+        #endregion
+
+        #region executive fucntions
+        //return instantiated node
+        public static Canvas CreateIsolatedNode(PointF nodeCanvasPos, bool isNodeRoot=false)
+        {
+            Node newNode = new Node();
+            Canvas createdCanvas = InstantiateNodeCanvas(newNode, nodeCanvasPos);
+            newNode.canvas = createdCanvas;
+            return createdCanvas;
+        }
+
+        public static Canvas CreateNodeHeir(Node parentNode,string branchText)
+        {
+            Node heirNode = parentNode.AddHeir("new heir's branch text","new heir content");
+            heirNode.AddParent(parentNode);
+            
+            Canvas parentCanvas = parentNode.canvas;
+            Border nodeCanvasBorder = (Border)parentCanvas.Parent;
+            PointF heirCanvasPos = new PointF((float)Canvas.GetLeft(nodeCanvasBorder),(float)(Canvas.GetTop(nodeCanvasBorder) +parentCanvas.Height+70));
+            Canvas heirCanvas = InstantiateNodeCanvas(heirNode, heirCanvasPos);
+            
+
+            TextBlock branchTextBlock = InstantiateBranchTextBlock(branchText);
+
+            NodeCanvasData parentNCDInst = GetCanvasNodeData(parentCanvas);
+            parentNCDInst.heirsTextBlocks.Add(heirCanvas, branchTextBlock);
+            parentNCDInst.isCanvasChanged = true;
+            return heirCanvas;
         }
 
         //создание визуальных элементов узла
-        static Canvas CreateNodeCanvas(Node node, PointF nodeCanvasPos)
+        static Canvas InstantiateNodeCanvas(Node node, PointF nodeCanvasPos)
         {
             //the border, that embrace node canvas
-            Border nodeBorder = new Border() {CornerRadius=new CornerRadius(5),BorderThickness=new Thickness(1),BorderBrush = System.Windows.Media.Brushes.Black };
+            Border nodeBorder = new Border() { CornerRadius = new CornerRadius(5), BorderThickness = new Thickness(1), BorderBrush = System.Windows.Media.Brushes.Black };
 
             //canvas, that visually represent corresponding node 
             Canvas nodeCanvas = new Canvas();
@@ -79,8 +404,10 @@ namespace StoryCreator
             nodeCanvas.MouseRightButtonUp += new MouseButtonEventHandler(nodeCanvas_RightMouseUp);
             nodeCanvas.Width = 200;
             nodeCanvas.Height = 100;
+            nodeCanvas.Margin = new Thickness(1);
             nodeCanvas.Background = System.Windows.Media.Brushes.LightGray;
             workspaceCanvas.Children.Add(nodeBorder);
+            Canvas.SetZIndex(nodeBorder,30000);
             nodeBorder.Child = nodeCanvas;
             Canvas.SetTop(nodeBorder, nodeCanvasPos.Y);
             Canvas.SetLeft(nodeBorder, nodeCanvasPos.X);
@@ -139,318 +466,20 @@ namespace StoryCreator
 
             nCDInst.isCanvasChanged = true;
             curNodesOnLayout.Add(nodeCanvas, nCDInst);
-            //Canvas.SetZIndex(nodeCanvas,0);
-            
+            Canvas.SetZIndex(nodeCanvas,30000);
+            RepaintNodeShapes(nodeCanvas);
 
             return nodeCanvas;
         }
-
-        #region Events handeling
-
-        private static void canvasRedRect_MouseEnter(object sender, MouseEventArgs e)
-        {
-            System.Windows.Shapes.Rectangle redRect = (System.Windows.Shapes.Rectangle)sender;
-            Border redRectBorder = (Border)redRect.Parent;
-            redRectBorder.BorderBrush = System.Windows.Media.Brushes.Blue;
-            redRectBorder.BorderThickness = new Thickness(2);
-        }
-        private static void canvasRedRect_MouseLeave(object sender, MouseEventArgs e)
-        {
-            System.Windows.Shapes.Rectangle redRect = (System.Windows.Shapes.Rectangle)sender;
-            Border redRectBorder = (Border)redRect.Parent;
-            redRectBorder.BorderBrush = System.Windows.Media.Brushes.Black;
-            redRectBorder.BorderThickness = new Thickness(1);
-        }
-        private static void canvasRedRect_LeftMouseDown(object sender, MouseEventArgs e)
-        {
-            System.Windows.Shapes.Rectangle redRect = (System.Windows.Shapes.Rectangle)sender;
-            Canvas createdNodecanvas = CreateNodeHeir(GetCanvasNodeData(GetRectCanvas(redRect)).node, "branch text");
-            Border nodeCanvasBorder = (Border)createdNodecanvas.Parent;
-            Canvas.SetLeft(nodeCanvasBorder, e.GetPosition(workspaceCanvas).X-createdNodecanvas.Width*.5f);
-            Canvas.SetTop(nodeCanvasBorder, e.GetPosition(workspaceCanvas).Y- createdNodecanvas.Height*.75f);
-
-            curManipulatingCanvas = createdNodecanvas;
-            curManipCanvBorder = (Border)curManipulatingCanvas.Parent;
-            nodeCanvOffsVector = new PointF((float)(e.GetPosition(mWInst.workspaceCanvas).X - Canvas.GetLeft(curManipCanvBorder)), (float)(e.GetPosition(mWInst.workspaceCanvas).Y - Canvas.GetTop(curManipCanvBorder)));
-            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nodeCanvPositioning;
-
-        }
-        private static void canvasRedRect_RightMouseDown(object sender, MouseEventArgs e)
-        {
-            curManipulatingCanvas = GetRectCanvas((System.Windows.Shapes.Rectangle)sender);
-            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong;
-        }
-        private static void nodeCanvas_MouseEnter(object sender, MouseEventArgs e)
-        {
-            Canvas nodeCanvas = (Canvas)sender;
-            canvasOnHover = nodeCanvas;
-            Border nodeCanvasBorder = (Border)nodeCanvas.Parent;
-            nodeCanvasBorder.BorderBrush = System.Windows.Media.Brushes.Blue;
-            nodeCanvasBorder.BorderThickness = new Thickness(2);
-            switch (mWInst.workspaceCondition)
-            {
-                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
-                    break;
-                default:
-                    break;
-            }
-        }
-        private static void nodeCanvas_MouseLeave(object sender, MouseEventArgs e)
-        {
-            canvasOnHover = null;
-            Canvas nodeCanvas = (Canvas)sender;
-            Border nodeCanvasBorder = (Border)nodeCanvas.Parent;
-            nodeCanvasBorder.BorderBrush = System.Windows.Media.Brushes.Black;
-            nodeCanvasBorder.BorderThickness = new Thickness(1);
-        }
-        private static void nodeCanvas_LeftMouseDown(object sender, MouseEventArgs e)
-        {
-            curManipulatingCanvas = (Canvas)sender;
-            curManipCanvBorder = (Border)curManipulatingCanvas.Parent;
-            Canvas.SetZIndex(curManipulatingCanvas, 0);
-            nodeCanvOffsVector = new PointF((float)(e.GetPosition(mWInst.workspaceCanvas).X - Canvas.GetLeft(curManipCanvBorder)), (float)(e.GetPosition(mWInst.workspaceCanvas).Y - Canvas.GetTop(curManipCanvBorder)));
-            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nodeCanvPositioning;
-        }
-        private static void nodeCanvas_LeftMouseUp(object sender, MouseEventArgs e)
-        {
-            curManipCanvBorder.BorderBrush = System.Windows.Media.Brushes.Black;
-            curManipCanvBorder.BorderThickness = new Thickness(1);
-
-            workspaceCanvas.Children.Remove(curManipulatingCanvas);
-            curManipCanvBorder.Child = curManipulatingCanvas;
-            mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nothingHappens;
-        }
-        private static void nodeCanvas_RightMouseUp(object sender, MouseEventArgs e)
-        {
-            Canvas nodeCanvas = (Canvas)sender;
-            switch (mWInst.workspaceCondition)
-            {
-                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
-
-                    TextBlock branchTextBlock = InstantiateBranchTextBlock("branch text");
-
-                    NodeCanvasData parentNCDInst = GetCanvasNodeData(curManipulatingCanvas);
-                    parentNCDInst.heirsTextBlocks.Add(nodeCanvas, branchTextBlock);
-
-                    GetCanvasNodeData(nodeCanvas).node.AddParent(parentNCDInst.node);
-                    parentNCDInst.node.AddHeir("branch text", GetCanvasNodeData(nodeCanvas).node);
-                    mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nothingHappens;
-                    GetCanvasNodeData(curManipulatingCanvas).isCanvasChanged = true;
-                    workspaceCanvas.Children.Remove(curDrawingPoyline);
-                    break;
-                default:
-                    break;
-            }
-        }
-        private static void workspaceCanvas_MouseMove(object sender, MouseEventArgs e)
-        {
-            mouseLastPos = new PointF((float)(e.GetPosition(workspaceCanvas).X), (float)(e.GetPosition(workspaceCanvas).Y));
-            switch (mWInst.workspaceCondition)
-            {
-                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
-                    workspaceCanvas.Children.Remove(curDrawingPoyline);
-                    Border curManipCanvBorder = (Border)curManipulatingCanvas.Parent;
-                    PointF p0 = new PointF((float)(Canvas.GetLeft(curManipCanvBorder) + .5f * curManipCanvBorder.ActualWidth), (float)(Canvas.GetTop(curManipCanvBorder)));
-                    PointF p1 = new PointF((float)(Canvas.GetLeft(curManipCanvBorder) + .5f * curManipCanvBorder.ActualWidth), (float)(Canvas.GetTop(curManipCanvBorder) + curManipCanvBorder.ActualHeight));
-                    PointF p2 = mouseLastPos;
-                    if (canvasOnHover != null) {
-                        Ellipse pivotParentEllipse = GetCanvasNodeData(canvasOnHover).parentPivot;
-                        p2 = new PointF((float)(Canvas.GetLeft(pivotParentEllipse)+pivotParentEllipse.ActualWidth*.5f),(float)(Canvas.GetTop(pivotParentEllipse)+pivotParentEllipse.ActualHeight*.5f));
-                    }
-                    curDrawingPoyline = RelationsDrawer.ConstructPolyline(p0,p1,p2,new PointF {X=p2.X,Y=p2.Y+50 });
-                    workspaceCanvas.Children.Add(curDrawingPoyline);
-                    break;
-                default:
-                    break;
-            }
-        }
-        private static void workspaceCanvas_RightMouseUp(object sender, MouseEventArgs e)
-        {
-            switch (mWInst.workspaceCondition)
-            {
-                case MainWindow.WorkspaceConditions.fromParentToHeirRelationPositioniong:
-                    workspaceCanvas.Children.Remove(curDrawingPoyline);
-                    mWInst.workspaceCondition = MainWindow.WorkspaceConditions.nothingHappens;
-                    break;
-                default:
-                    break;
-            }
-        }
-        private static void nodeTextBlock_LeftMouseDown(object sender, MouseEventArgs e)
-        {
-            //MessageBox.Show("LMB click was handeled at "+ ((TextBlock)sender).Name);
-        }
-        private static void nodeDelButton_Click(object sender, RoutedEventArgs e)
-        {
-            Canvas nodeCanvasToDel = (Canvas)((Button)sender).Parent;
-            DelNodeFromHeirs(nodeCanvasToDel);
-            DelNodeFromParents(nodeCanvasToDel);
-            Border nodecanvasBorder = (Border)nodeCanvasToDel.Parent;
-            workspaceCanvas.Children.Remove(nodecanvasBorder);
-            RemoveNodeShapes(nodeCanvasToDel);
-            curNodesOnLayout.Remove(nodeCanvasToDel);
-        }
-        private static void nodeAddHeirButton_Click(object sender, RoutedEventArgs e)
-        {
-            CreateNodeHeir(curNodesOnLayout[((Canvas)((Button)sender).Parent)].node, "branch text");
-        }
-        #endregion
-
-        #region controls functions
-        //>>>
-        //calls from MainWindow
-        public static void ToPositionTheNodeCanvas()
-        {
-            CheckNodes();
-            float x= mouseLastPos.X - nodeCanvOffsVector.X;
-            float y= mouseLastPos.Y - nodeCanvOffsVector.Y;
-            NodeCanvasData nCDinst = GetCanvasNodeData(curManipulatingCanvas);
-            nCDinst.isCanvasChanged = IsNodeCanvasPosChanged(curManipulatingCanvas, new PointF(x, y));
-            Canvas.SetLeft(curManipCanvBorder, x);
-            Canvas.SetTop(curManipCanvBorder, y);
-
-            foreach (Node parentNode in nCDinst.node.parents)
-                GetCanvasNodeData(parentNode.canvas).isCanvasChanged=true;
-            
-
-        }
-        public static void CheckNodes()
-        {
-            foreach( KeyValuePair<Canvas,NodeCanvasData> pair in curNodesOnLayout)
-            
-                if (pair.Value.isCanvasChanged)
-                {
-                    RepaintNodeShapes(pair.Key);
-                    pair.Value.isCanvasChanged = false;
-                }
-        }
-        //<<<
-        static bool IsNodeCanvasPosChanged(Canvas nodeCanvas,PointF newPoint)
-        {
-            if (Canvas.GetLeft(nodeCanvas) == newPoint.X && Canvas.GetTop(nodeCanvas) == newPoint.Y) return false;
-            return true;
-        }
-        static void RepaintNodeShapes(Canvas nodeCanvas)
-        {
-            Border nodeCanvasBorder = (Border)nodeCanvas.Parent;
-            RemoveNodeShapes(nodeCanvas);
-            NodeCanvasData ncDInst = GetCanvasNodeData(nodeCanvas);
-            Node node = ncDInst.node;
-
-            if (node.heirs != null && node.heirs.Count > 0)
-            {
-                List<Canvas> heirsCanvases = new List<Canvas>();
-                foreach (Heir heir in node.heirs)
-                {
-                    heirsCanvases.Add(curNodesOnLayout.Where(el => el.Value.node.Equals(heir.heirNode)).ToArray()[0].Key);
-                }
-                for (int i = 0; i < heirsCanvases.Count; i++)
-                {
-                    PointF p0 = new PointF((float)(Canvas.GetLeft(nodeCanvasBorder) + .5f * nodeCanvasBorder.ActualWidth), (float)Canvas.GetTop(nodeCanvasBorder));
-                    PointF p1 = new PointF((float)(Canvas.GetLeft(nodeCanvasBorder) + .5f * nodeCanvasBorder.ActualWidth), (float)(Canvas.GetTop(nodeCanvasBorder) + nodeCanvasBorder.ActualHeight + ncDInst.heirsPivot.ActualHeight*.5f));
-                    PointF p2 = new PointF((float)(Canvas.GetLeft(((Border)heirsCanvases[i].Parent)) + .5f * ((Border)heirsCanvases[i].Parent).ActualWidth), (float)(Canvas.GetTop(((Border)heirsCanvases[i].Parent))- GetCanvasNodeData(heirsCanvases[i]).parentPivot.ActualHeight*.5f));
-                    PointF p3 = new PointF((float)(Canvas.GetLeft(((Border)heirsCanvases[i].Parent)) + .5f * ((Border)heirsCanvases[i].Parent).ActualWidth), (float)(Canvas.GetTop(((Border)heirsCanvases[i].Parent)) + ((Border)heirsCanvases[i].Parent).ActualHeight));
-                    Polyline newPLine = RelationsDrawer.ConstructPolyline(p0, p1, p2, p3);
-                    
-                    int midIndex = (int)(newPLine.Points.Count * .5f);
-
-                    AddArrowsToPolyline(newPLine);
-
-                    System.Windows.Point textBlockPos = newPLine.Points.ToArray()[midIndex];
-
-                    Border tmpBorder = (Border)GetBranchTextBlock(nodeCanvas,heirsCanvases[i]).Parent;
-                    Canvas.SetLeft(tmpBorder, textBlockPos.X- tmpBorder.ActualWidth * .5f);
-                    Canvas.SetTop(tmpBorder, textBlockPos.Y);
-
-                    ncDInst.relations.Add(newPLine);
-                    workspaceCanvas.Children.Add(newPLine);
-                }
-            }
-
-            Border rectBorder = new Border() { CornerRadius = new CornerRadius(2), BorderThickness = new Thickness(1), BorderBrush = System.Windows.Media.Brushes.Black };
-
-            System.Windows.Shapes.Rectangle heirsPivotRect = new System.Windows.Shapes.Rectangle() { Stroke = new SolidColorBrush(Colors.Black), Fill = new SolidColorBrush(Colors.IndianRed), Width = 25, Height = 25 };
-            Canvas.SetLeft(rectBorder, Canvas.GetLeft(nodeCanvasBorder) + .5f * nodeCanvasBorder.ActualWidth - 12.5f);
-            Canvas.SetTop(rectBorder, Canvas.GetTop(nodeCanvasBorder) + nodeCanvasBorder.ActualHeight);
-            heirsPivotRect.MouseEnter += new MouseEventHandler(canvasRedRect_MouseEnter);
-            heirsPivotRect.MouseLeave += new MouseEventHandler(canvasRedRect_MouseLeave);
-            heirsPivotRect.MouseLeftButtonDown += new MouseButtonEventHandler(canvasRedRect_LeftMouseDown);
-            heirsPivotRect.MouseRightButtonDown += new MouseButtonEventHandler(canvasRedRect_RightMouseDown);
-            rectBorder.Child = heirsPivotRect;
-            workspaceCanvas.Children.Add(rectBorder);
-            ncDInst.heirsPivot = heirsPivotRect;
-
-            Ellipse parentPivotEllipse = new Ellipse() { Stroke = new SolidColorBrush(Colors.Black), Fill = new SolidColorBrush(Colors.CadetBlue), Width = 25, Height = 25 };
-            Canvas.SetLeft(parentPivotEllipse, Canvas.GetLeft(nodeCanvasBorder) + .5f * nodeCanvas.Width - 12.5f);
-            Canvas.SetTop(parentPivotEllipse, Canvas.GetTop(nodeCanvasBorder) - 25);
-            workspaceCanvas.Children.Add(parentPivotEllipse);
-            ncDInst.parentPivot = parentPivotEllipse;
-        }
-        static void RemoveNodeShapes(Canvas nodeCanvas)
-        {
-            NodeCanvasData ncDInst = curNodesOnLayout[nodeCanvas];
-            if (ncDInst.heirsPivot != null)
-            {
-                Border borderToDel = (Border)ncDInst.heirsPivot.Parent;
-                workspaceCanvas.Children.Remove(borderToDel);
-                borderToDel = null;
-            }
-            if (ncDInst.parentPivot != null)
-            {
-                workspaceCanvas.Children.Remove(ncDInst.parentPivot);
-                ncDInst.parentPivot = null;
-            }
-            List<Polyline> relations = ncDInst.relations;
-            if (relations != null && relations.Count > 0)
-                for (int i = 0; i < relations.Count; i++)
-                {
-                    if(relations[i]!=null && relations[i].Points!=null)
-                    while(relations[i].Points.Count>0)
-                    {
-                        relations[i].Points.Remove(relations[i].Points.Take(1).ToArray()[0]);
-                    }
-                    workspaceCanvas.Children.Remove(relations[i]);
-                    relations[i] = null;
-                }
-
-        }
-        #endregion
-
-        #region executive fucntions
-        //return instantiated node
-        public static Node CreateNewNode(PointF nodeCanvasPos, string branchText, bool isNodeRoot=false)
-        {
-            Node newNode = new Node();
-            Canvas createdCanvas = CreateNodeCanvas(newNode, nodeCanvasPos);
-            newNode.canvas = createdCanvas;
-            return newNode;
-        }
-
-        public static Canvas CreateNodeHeir(Node parentNode,string branchText)
-        {
-            Node heirNode = parentNode.AddHeir("new heir's branch text","new heir content");
-            heirNode.AddParent(parentNode);
-            
-            Canvas parentCanvas = parentNode.canvas;
-            Border nodeCanvasBorder = (Border)parentCanvas.Parent;
-            PointF heirCanvasPos = new PointF((float)Canvas.GetLeft(nodeCanvasBorder),(float)(Canvas.GetTop(nodeCanvasBorder) +parentCanvas.Height+50));
-            Canvas heirCanvas = CreateNodeCanvas(heirNode, heirCanvasPos);
-
-            TextBlock branchTextBlock = InstantiateBranchTextBlock(branchText);
-
-            NodeCanvasData parentNCDInst = GetCanvasNodeData(parentCanvas);
-            parentNCDInst.heirsTextBlocks.Add(heirCanvas, branchTextBlock);
-
-            return heirCanvas;
-        }
-
         static TextBlock InstantiateBranchTextBlock (string text)
         {
             Border tBBorder = new Border() { CornerRadius = new CornerRadius(5), BorderThickness = new Thickness(1), BorderBrush = System.Windows.Media.Brushes.Black,ClipToBounds=true };
             TextBlock newTextBlock = new TextBlock();
             tBBorder.Child = newTextBlock;
             workspaceCanvas.Children.Add(tBBorder);
+            Canvas.SetZIndex(tBBorder, 100000);
             newTextBlock.Background = System.Windows.Media.Brushes.White;
+            newTextBlock.Margin = new Thickness(1);
             newTextBlock.Text = text;
             newTextBlock.Width = 100;
             newTextBlock.Height = 25;
@@ -479,13 +508,18 @@ namespace StoryCreator
                             if (heir.heirNode.canvas.Equals(canvNodeToDel))
                             {
                                 parent.heirs.Remove(heir);
-                                GetCanvasNodeData(parent.canvas).isCanvasChanged = true;
+                                NodeCanvasData parentNCDInst = GetCanvasNodeData(parent.canvas);
+                                parentNCDInst.isCanvasChanged = true;
+                                workspaceCanvas.Children.Remove((Border)parentNCDInst.heirsTextBlocks[heir.heirNode.canvas].Parent);
+                                parentNCDInst.heirsTextBlocks.Remove(heir.heirNode.canvas);
                                 DelNodeFromParents(canvNodeToDel);
                                 return;
                             }
         }
         static void DelNodeFromHeirs(Canvas canvNodeToDel)
         {
+            foreach (TextBlock tbToDel in GetCanvasNodeData(canvNodeToDel).heirsTextBlocks.Values)
+                workspaceCanvas.Children.Remove((Border)tbToDel.Parent);
             Node nodeToDel = GetCanvasNodeData(canvNodeToDel).node;
             if(nodeToDel.heirs!=null && nodeToDel.heirs.Count>0)
             foreach(Heir heir in nodeToDel.heirs)
@@ -496,7 +530,7 @@ namespace StoryCreator
         #region accesory funcs
         static void AddArrowsToPolyline(Polyline sourceLine)
         {
-            int quartIndex = (int)(sourceLine.Points.Count * .25f);
+            int quartIndex = (int)(sourceLine.Points.Count * .3f);
             int threeQuartIndex = (int)(sourceLine.Points.Count * .75f) + 4;
 
             System.Windows.Point forwPoint = sourceLine.Points.ToArray()[quartIndex];
